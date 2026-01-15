@@ -18,7 +18,7 @@
             min-height: 500px;
         }
 
-        /* ダッシュボード（進捗表示） */
+        /* ダッシュボード */
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -53,8 +53,11 @@
             border-radius: 10px; transition: all 0.2s; background: var(--secondary); color: white;
             -webkit-tap-highlight-color: transparent;
         }
-        .btn-random { background: #e67e22 !important; }
+        .btn-resume { background: #2ecc71 !important; }
         .btn-review { background: #e74c3c !important; }
+        .btn-category { background: #9b59b6 !important; }
+        .btn-random { background: #e67e22 !important; }
+        .btn-stats { background: #f1c40f !important; color: #333 !important; }
         .hidden { display: none; }
 
         #question-text { font-size: 17px; font-weight: bold; margin-bottom: 20px; line-height: 1.6; }
@@ -98,12 +101,12 @@
         <div id="loading-status" style="text-align:center; padding:20px;">データを読み込んでいます...</div>
         
         <div class="menu-stack hidden" id="main-menu">
-            <button onclick="startQuiz('order')">最初から解く (ID順)</button>
-            <button onclick="startQuiz('random')" class="btn-random">問題をランダムに解く</button>
+            <button onclick="startQuiz('order')">最初から解く</button>
+            <button id="resume-btn" onclick="resumeQuiz()" class="btn-resume" style="display:none;">前回の続きから解く</button>
             <button id="review-btn" onclick="startQuiz('review')" class="btn-review hidden">間違えた問題を復習する (<span id="wrong-count">0</span>)</button>
-            <button id="resume-btn" onclick="resumeQuiz()" style="display:none; background:#2ecc71;">前回の続きから解く</button>
-            <button onclick="showCategoryMenu()" style="background:#9b59b6;">カテゴリを選択して解く</button>
-            <button onclick="showStats()" style="background:#f1c40f; color:#333;">成績表・合格判定</button>
+            <button onclick="showCategoryMenu()" class="btn-category">カテゴリを選択して解く</button>
+            <button onclick="startQuiz('random')" class="btn-random">問題をランダムに解く</button>
+            <button onclick="showStats()" class="btn-stats">成績表・合格判定</button>
         </div>
     </div>
 
@@ -171,15 +174,11 @@ async function initApp() {
 }
 
 function updateHomeUI() {
-    // 1. ダッシュボードの更新
     const totalCount = allQuestions.length;
     const answeredCount = answeredQuestionIds.length;
-    
-    // 学習進捗率（解いたユニークな問題数 / 全問題数）
     const progressPercent = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
     document.getElementById('overall-progress').innerText = progressPercent + "%";
 
-    // 平均正解率（全解答中の正解数 / 全解答数）
     let totalCorrect = 0, totalAnswered = 0;
     for(let cat in scoreData) {
         totalCorrect += scoreData[cat].correct;
@@ -188,7 +187,6 @@ function updateHomeUI() {
     const accuracyPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
     document.getElementById('overall-accuracy').innerText = accuracyPercent + "%";
 
-    // 2. ボタンの制御
     document.getElementById('resume-btn').style.display = localStorage.getItem('bizLawProgress') ? 'block' : 'none';
     const reviewBtn = document.getElementById('review-btn');
     if (wrongQuestionIds.length > 0) {
@@ -256,13 +254,11 @@ function checkAnswer(selectedNum, q, selectedText) {
         if (btn.innerText === selectedText && !isCorrect) btn.classList.add('wrong');
     });
 
-    // 成績データの更新
     if(!scoreData[q.category]) scoreData[q.category] = { correct: 0, total: 0 };
     scoreData[q.category].total++;
     if(isCorrect) scoreData[q.category].correct++;
     localStorage.setItem('bizLawStats', JSON.stringify(scoreData));
 
-    // ユニークな解答済み問題IDを記録（進捗率用）
     if (!answeredQuestionIds.includes(q.id)) {
         answeredQuestionIds.push(q.id);
         localStorage.setItem('bizLawAnsweredIds', JSON.stringify(answeredQuestionIds));
