@@ -14,7 +14,7 @@
         }
         .container { 
             width: 100%; max-width: 700px; background: #fff; padding: 20px; border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px; position: relative;
         }
         h1 { font-size: 1.5rem; text-align: center; color: var(--primary); margin-bottom: 30px; }
         h2 { font-size: 1.25rem; text-align: center; }
@@ -25,14 +25,15 @@
             -webkit-tap-highlight-color: transparent;
         }
         button:active { transform: scale(0.98); opacity: 0.9; }
-        .btn-random { background: #e67e22 !important; } /* ランダムボタン用の色 */
+        .btn-random { background: #e67e22 !important; }
+        .btn-review { background: #e74c3c !important; }
+        .btn-home-nav { background: #95a5a6; padding: 8px 15px; font-size: 12px; position: absolute; top: 20px; right: 20px; }
         .hidden { display: none; }
         .option-btn { 
             display: block; width: 100%; text-align: left; margin: 12px 0; padding: 15px; 
             background: #fff; color: var(--text); border: 2px solid #edf2f7; border-radius: 10px; 
             font-size: 15px; line-height: 1.4;
         }
-        .option-btn:hover { border-color: var(--secondary); background: #f0f7ff; }
         .option-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
         .option-btn.wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
         .result-box { 
@@ -51,18 +52,22 @@
         }
         @media (max-width: 480px) {
             .container { padding: 15px; border-radius: 0; min-height: 100vh; margin-top: 0; }
+            .btn-home-nav { top: 10px; right: 10px; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <button id="nav-home-btn" class="btn-home-nav hidden" onclick="confirmGoHome()">🏠 表紙へ戻る</button>
+
     <div id="home-screen">
         <h1>ビジネス法務3級<br>学習ナビ</h1>
         <div id="loading-status" style="text-align:center; padding:20px;">データを読み込んでいます...</div>
         <div class="menu-stack hidden" id="main-menu">
             <button onclick="startQuiz('order')">最初から解く (ID順)</button>
             <button onclick="startQuiz('random')" class="btn-random">問題をランダムに解く</button>
+            <button id="review-btn" onclick="startQuiz('review')" class="btn-review hidden">間違えた問題を復習する (<span id="wrong-count">0</span>)</button>
             <button id="resume-btn" onclick="resumeQuiz()" style="display:none; background:#2ecc71;">前回の続きから解く</button>
             <button onclick="showCategoryMenu()" style="background:#9b59b6;">カテゴリを選択して解く</button>
             <button onclick="showStats()" style="background:#f1c40f; color:#333;">成績表・合格判定</button>
@@ -72,11 +77,11 @@
     <div id="category-screen" class="hidden">
         <h2>カテゴリ選択</h2>
         <div id="category-list" class="menu-stack"></div>
-        <button onclick="showHome()" style="background:#95a5a6; margin-top:20px;">戻る</button>
+        <button onclick="showHome()" style="background:#95a5a6; margin-top:20px; width:100%;">戻る</button>
     </div>
 
     <div id="quiz-screen" class="hidden">
-        <div style="display:flex; justify-content: space-between; font-size:12px; color:#7f8c8d; margin-bottom:10px;">
+        <div style="display:flex; justify-content: space-between; font-size:12px; color:#7f8c8d; margin-bottom:10px; padding-right:80px;">
             <span id="progress-text"></span>
             <span id="category-label"></span>
         </div>
@@ -108,59 +113,88 @@ let allQuestions = [];
 let currentQuiz = [];
 let currentIndex = 0;
 let scoreData = JSON.parse(localStorage.getItem('bizLawStats')) || {};
+// 間違えた問題のIDを保存する配列
+let wrongQuestionIds = JSON.parse(localStorage.getItem('bizLawWrongIds')) || [];
 
 async function initApp() {
     try {
         const response = await fetch('./biz3class.json');
         if (!response.ok) throw new Error('JSON読み込み失敗');
         const data = await response.json();
-        
-        // デフォルトはID順にソート
         allQuestions = data.sort((a, b) => parseInt(a.id) - parseInt(b.id));
         
         document.getElementById('loading-status').classList.add('hidden');
         document.getElementById('main-menu').classList.remove('hidden');
-        if(localStorage.getItem('bizLawProgress')) {
-            document.getElementById('resume-btn').style.display = 'block';
-        }
+        updateHomeUI();
     } catch (err) {
         document.getElementById('loading-status').innerHTML = "⚠️ JSON読み込みエラー";
     }
 }
 
+function updateHomeUI() {
+    // 続きからのボタン表示
+    if(localStorage.getItem('bizLawProgress')) {
+        document.getElementById('resume-btn').style.display = 'block';
+    } else {
+        document.getElementById('resume-btn').style.display = 'none';
+    }
+
+    // 復習ボタンの表示制御
+    const reviewBtn = document.getElementById('review-btn');
+    const wrongCountSpan = document.getElementById('wrong-count');
+    if (wrongQuestionIds.length > 0) {
+        reviewBtn.classList.remove('hidden');
+        wrongCountSpan.innerText = wrongQuestionIds.length;
+    } else {
+        reviewBtn.classList.add('hidden');
+    }
+}
+
 function showHome() {
     document.querySelectorAll('.container > div').forEach(el => el.classList.add('hidden'));
+    document.getElementById('nav-home-btn').classList.add('hidden');
     document.getElementById('home-screen').classList.remove('hidden');
+    updateHomeUI();
+}
+
+function confirmGoHome() {
+    if (confirm("学習を中断して表紙に戻りますか？（進捗は保存されます）")) {
+        showHome();
+    }
 }
 
 function startQuiz(mode, catName = null) {
     currentIndex = 0;
     if (mode === 'random') {
-        // 問題の順番をシャッフル
         currentQuiz = [...allQuestions].sort(() => Math.random() - 0.5);
     } else if (mode === 'order') {
-        // ID順
         currentQuiz = [...allQuestions];
+    } else if (mode === 'review') {
+        // 間違えたIDに合致する問題を抽出してシャッフル
+        currentQuiz = allQuestions.filter(q => wrongQuestionIds.includes(q.id)).sort(() => Math.random() - 0.5);
     } else {
-        // カテゴリ別
         currentQuiz = allQuestions.filter(q => q.category === catName);
     }
     
+    if (currentQuiz.length === 0) {
+        alert("対象の問題がありません。");
+        return;
+    }
+
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('category-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.remove('hidden');
+    document.getElementById('nav-home-btn').classList.remove('hidden');
     renderQuestion();
 }
 
 function renderQuestion() {
     const q = currentQuiz[currentIndex];
-    // IDを表示しつつ現在の進行状況を表示
     document.getElementById('progress-text').innerText = `問題 ID:${q.id} (${currentIndex + 1} / ${currentQuiz.length})`;
     document.getElementById('category-label').innerText = q.category;
     document.getElementById('question-text').innerText = q.question;
     document.getElementById('feedback-container').classList.add('hidden');
     
-    // 選択肢（1〜4）をシャッフル
     const opts = [
         { text: q.option1, num: 1 },
         { text: q.option2, num: 2 },
@@ -192,10 +226,23 @@ function checkAnswer(selectedNum, q, selectedText) {
         if (btn.innerText === selectedText && !isCorrect) btn.classList.add('wrong');
     });
 
+    // 成績データの更新
     if(!scoreData[q.category]) scoreData[q.category] = { correct: 0, total: 0 };
     scoreData[q.category].total++;
     if(isCorrect) scoreData[q.category].correct++;
     localStorage.setItem('bizLawStats', JSON.stringify(scoreData));
+
+    // 復習用リストの更新
+    if (isCorrect) {
+        // 正解したら復習リストから削除
+        wrongQuestionIds = wrongQuestionIds.filter(id => id !== q.id);
+    } else {
+        // 間違えたらリストに追加（重複なし）
+        if (!wrongQuestionIds.includes(q.id)) {
+            wrongQuestionIds.push(q.id);
+        }
+    }
+    localStorage.setItem('bizLawWrongIds', JSON.stringify(wrongQuestionIds));
 
     const fb = document.getElementById('feedback-container');
     fb.classList.remove('hidden');
@@ -207,13 +254,11 @@ function checkAnswer(selectedNum, q, selectedText) {
     `;
 
     const searchArea = document.getElementById('search-buttons');
-    searchArea.innerHTML = `<a href="https://www.google.com/search?q=${encodeURIComponent('ビジネス実務法務3級 ' + correctText)}" target="_blank" class="search-link">🔎 正答を詳しく解説</a>`;
-    
+    searchArea.innerHTML = `<a href="https://www.google.com/search?q=${encodeURIComponent('ビジネス実務法務3級 ' + correctText)}" target="_blank" class="search-link">🔎 正答を検索</a>`;
     if(!isCorrect) {
-        searchArea.innerHTML += `<a href="https://www.google.com/search?q=${encodeURIComponent('ビジネス実務法務3級 ' + selectedText)}" target="_blank" class="search-link" style="background:#ea4335">🔎 自分の選択を解説</a>`;
+        searchArea.innerHTML += `<a href="https://www.google.com/search?q=${encodeURIComponent('ビジネス実務法務3級 ' + selectedText)}" target="_blank" class="search-link" style="background:#ea4335">🔎 誤答を検索</a>`;
     }
 
-    // 進捗保存
     localStorage.setItem('bizLawProgress', JSON.stringify({ currentIndex: currentIndex + 1, currentQuiz }));
 }
 
@@ -223,7 +268,7 @@ function nextQuestion() {
         renderQuestion();
     } else {
         localStorage.removeItem('bizLawProgress');
-        alert("全問題を終了しました！成績表を確認しましょう。");
+        alert("全問題を終了しました！");
         showStats();
     }
 }
@@ -235,6 +280,7 @@ function resumeQuiz() {
         currentIndex = saved.currentIndex;
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
+        document.getElementById('nav-home-btn').classList.remove('hidden');
         renderQuestion();
     }
 }
@@ -255,6 +301,7 @@ function showCategoryMenu() {
 
 function showStats() {
     document.querySelectorAll('.container > div').forEach(el => el.classList.add('hidden'));
+    document.getElementById('nav-home-btn').classList.add('hidden');
     document.getElementById('stats-screen').classList.remove('hidden');
     const tbody = document.querySelector('#stats-table tbody');
     const statusDiv = document.getElementById('total-status');
