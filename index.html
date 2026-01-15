@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ビジネス法務3級 対策アプリ Ver.2.0</title>
+    <style>
+        :root { --primary: #2c3e50; --secondary: #3498db; --success: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
+        body { font-family: "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: var(--bg); color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2 { color: var(--primary); text-align: center; }
+        .menu-stack { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
+        button { padding: 15px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; transition: 0.3s; background: var(--secondary); color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .hidden { display: none; }
+        .option-btn { display: block; width: 100%; text-align: left; margin: 10px 0; background: #f8f9fa; color: #333; border: 1px solid #ddd; }
+        .option-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .option-btn.wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
+        .result-box { margin-top: 20px; padding: 20px; border: 2px solid #ddd; border-radius: 8px; background: #fff; }
+        .search-link { display: inline-block; margin: 10px 10px 0 0; padding: 8px 12px; background: #4285f4; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; }
+        .stats-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .stats-table th, .stats-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        #total-status { margin-bottom: 20px; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="home-screen">
+        <h1>ビジネス法務3級 学習ナビ</h1>
+        <div id="loading-msg">データを読み込んでいます...</div>
+        <div class="menu-stack hidden" id="main-menu">
+            <button onclick="startQuiz('all')">最初から解く (選択肢ランダム)</button>
+            <button id="resume-btn" onclick="resumeQuiz()" style="display:none;">前回の続きから解く</button>
+            <button onclick="showCategoryMenu()">カテゴリを選択して解く</button>
+            <button onclick="showStats()">成績表・合格判定</button>
+        </div>
+    </div>
+
+    <div id="category-screen" class="hidden">
+        <h2>カテゴリ選択</h2>
+        <div id="category-list" class="menu-stack"></div>
+        <button onclick="showHome()" style="background:#95a5a6; margin-top:20px; width:100%;">戻る</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div style="display:flex; justify-content: space-between; font-weight:bold; color: #666;">
+            <span id="progress-text"></span>
+            <span id="category-label"></span>
+        </div>
+        <p id="question-text" style="font-size:1.1rem; font-weight:bold; margin: 20px 0;"></p>
+        <div id="options-container"></div>
+        
+        <div id="feedback-container" class="hidden">
+            <div id="result-msg" class="result-box"></div>
+            <div id="search-buttons"></div>
+            <button onclick="nextQuestion()" style="width:100%; margin-top:20px; background:var(--primary);">次の問題へ</button>
+        </div>
+    </div>
+
+    <div id="stats-screen" class="hidden">
+        <h2>成績表・合格判定</h2>
+        <div id="total-status"></div>
+        <table class="stats-table" id="stats-table">
+            <thead><tr><th>カテゴリ</th><th>正解数 / 解答数</th><th>正答率</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button onclick="showHome()" style="background:#95a5a6; margin-top:20px; width:100%;">戻る</button>
+    </div>
+</div>
+
+<script>
+let allQuestions = [];
+let currentQuiz = [];
+let currentIndex = 0;
+let scoreData = JSON.parse(localStorage.getItem('bizLawStats')) || {};
+
+// 1. JSONデータの読み込み
+async function loadQuestions() {
+    try {
+        const response = await fetch('biz3class.json');
+        if (!response.ok) throw new Error('JSONファイルの読み込みに失敗しました');
+        allQuestions = await response.json();
+        document.getElementById('loading-msg').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
+        if(localStorage.getItem('bizLawProgress')) document.getElementById('resume-btn').style.display = 'block';
+    } catch (error) {
+        document.getElementById('loading-msg').innerText = "エラー: " + error.message;
+    }
+}
+
+function showHome() {
+    document.querySelectorAll('.container > div').forEach(el => el.classList.add('hidden'));
+    document.getElementById('home-screen').classList.remove('hidden');
+}
+
+function startQuiz(type, catName = null) {
+    currentIndex = 0;
+    currentQuiz = (type === 'all') ? [...allQuestions] : allQuestions.filter(q => q.category === catName);
+    
+    // 全問解く場合のみ問題をシャッフル
+    if(type === 'all') currentQuiz.sort(() => Math.random() - 0.5);
+    
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('category-screen').classList.add('hidden');
+    document.getElementById('quiz-screen').classList.remove('hidden');
+    renderQuestion();
+}
+
+function renderQuestion() {
+    const q = currentQuiz[currentIndex];
+    document.getElementById('progress-text').innerText = `Q.${currentIndex + 1} / ${currentQuiz.length}`;
+    document.getElementById('category-label').innerText = q.category;
+    document.getElementById('question-text').innerText = q.question;
+    document.getElementById('feedback-container').classList.add('hidden');
+    
+    // 選択肢のシャッフル（ここがご要望のランダム機能）
+    let options = [q.option1, q.option2, q.option3, q.option4].sort(() => Math.random() - 0.5);
+    
+    const container = document.getElementById('options-container');
+    container.innerHTML = '';
+    options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(opt, q);
+        container.appendChild(btn);
+    });
+}
+
+function checkAnswer(selected, q) {
+    const isCorrect = (selected === q.answer);
+    const btns = document.querySelectorAll('.option-btn');
+    
+    btns.forEach(btn => {
+        btn.disabled = true;
+        if(btn.innerText === q.answer) btn.classList.add('correct');
+        if(btn.innerText === selected && !isCorrect) btn.classList.add('wrong');
+    });
+
+    if(!scoreData[q.category]) scoreData[q.category] = { correct: 0, total: 0 };
+    scoreData[q.category].total++;
+    if(isCorrect) scoreData[q.category].correct++;
+    localStorage.setItem('bizLawStats', JSON.stringify(scoreData));
+
+    const fb = document.getElementById('feedback-container');
+    const msg = document.getElementById('result-msg');
+    fb.classList.remove('hidden');
+    msg.innerHTML = `<h3 style="margin-top:0; color:${isCorrect ? 'var(--success)' : 'var(--danger)'}">${isCorrect ? '正解' : '不正解'}</h3><p>${q.explanation}</p>`;
+
+    const searchArea = document.getElementById('search-buttons');
+    const googleBase = "https://www.google.com/search?q=";
+    searchArea.innerHTML = `<a href="${googleBase}${encodeURIComponent('ビジネス実務法務3級 ' + q.answer)}" target="_blank" class="search-link">🔎 正答をGoogleで調べる</a>`;
+    
+    if(!isCorrect) {
+        searchArea.innerHTML += `<a href="${googleBase}${encodeURIComponent('ビジネス実務法務3級 ' + selected)}" target="_blank" class="search-link" style="background:#ea4335">🔎 選択肢「${selected.substring(0,10)}...」を調べる</a>`;
+    }
+
+    localStorage.setItem('bizLawProgress', JSON.stringify({ currentIndex: currentIndex + 1, currentQuiz }));
+}
+
+function nextQuestion() {
+    currentIndex++;
+    if(currentIndex < currentQuiz.length) {
+        renderQuestion();
+    } else {
+        alert("お疲れ様でした！このセッションの全問題を完了しました。");
+        localStorage.removeItem('bizLawProgress');
+        showStats();
+    }
+}
+
+function resumeQuiz() {
+    const saved = JSON.parse(localStorage.getItem('bizLawProgress'));
+    if(saved) {
+        currentQuiz = saved.currentQuiz;
+        currentIndex = saved.currentIndex;
+        document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        renderQuestion();
+    }
+}
+
+function showCategoryMenu() {
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('category-screen').classList.remove('hidden');
+    const list = document.getElementById('category-list');
+    const categories = [...new Set(allQuestions.map(q => q.category))];
+    list.innerHTML = '';
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.innerText = cat;
+        btn.onclick = () => startQuiz('category', cat);
+        list.appendChild(btn);
+    });
+}
+
+function showStats() {
+    document.querySelectorAll('.container > div').forEach(el => el.classList.add('hidden'));
+    document.getElementById('stats-screen').classList.remove('hidden');
+    const tbody = document.querySelector('#stats-table tbody');
+    const statusDiv = document.getElementById('total-status');
+    tbody.innerHTML = '';
+    
+    let totalCorrect = 0, totalAnswered = 0;
+
+    for(let cat in scoreData) {
+        const row = tbody.insertRow();
+        const {correct, total} = scoreData[cat];
+        const rate = ((correct / total) * 100).toFixed(1);
+        totalCorrect += correct; totalAnswered += total;
+        row.insertCell(0).innerText = cat;
+        row.insertCell(1).innerText = `${correct} / ${total}`;
+        row.insertCell(2).innerText = `${rate}%`;
+    }
+
+    if (totalAnswered > 0) {
+        const totalRate = ((totalCorrect / totalAnswered) * 100).toFixed(1);
+        const isPass = totalRate >= 70;
+        statusDiv.style.background = isPass ? "#d4edda" : "#f8d7da";
+        statusDiv.style.color = isPass ? "#155724" : "#721c24";
+        statusDiv.innerHTML = `総合正答率: ${totalRate}%<br>${isPass ? '合格圏内です！この調子で頑張りましょう。' : '合格まであと少し！正答率70%を目指しましょう。'}`;
+    } else {
+        statusDiv.innerHTML = "データがありません。問題を解いてみましょう！";
+    }
+}
+
+// 起動
+loadQuestions();
+</script>
+</body>
+</html>
