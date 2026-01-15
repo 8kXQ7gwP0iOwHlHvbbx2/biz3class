@@ -5,68 +5,101 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ビジネス法務3級 対策アプリ</title>
     <style>
-        :root { --primary: #2c3e50; --secondary: #3498db; --success: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1, h2 { color: var(--primary); text-align: center; }
-        .menu-stack { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
-        button { padding: 15px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; transition: 0.3s; background: var(--secondary); color: white; }
-        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        :root { 
+            --primary: #2c3e50; --secondary: #3498db; --success: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; --text: #333;
+        }
+        body { 
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; 
+            background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center;
+        }
+        .container { 
+            width: 100%; max-width: 700px; background: #fff; padding: 20px; border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px;
+        }
+        h1 { font-size: 1.5rem; text-align: center; color: var(--primary); margin-bottom: 30px; }
+        h2 { font-size: 1.25rem; text-align: center; }
+        .menu-stack { display: flex; flex-direction: column; gap: 12px; }
+        button { 
+            padding: 16px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; 
+            border-radius: 10px; transition: all 0.2s; background: var(--secondary); color: white;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-random { background: #e67e22 !important; } /* ランダムボタン用の色 */
         .hidden { display: none; }
-        .option-btn { display: block; width: 100%; text-align: left; margin: 10px 0; padding: 15px; background: #f8f9fa; color: #333; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        .option-btn { 
+            display: block; width: 100%; text-align: left; margin: 12px 0; padding: 15px; 
+            background: #fff; color: var(--text); border: 2px solid #edf2f7; border-radius: 10px; 
+            font-size: 15px; line-height: 1.4;
+        }
+        .option-btn:hover { border-color: var(--secondary); background: #f0f7ff; }
         .option-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
         .option-btn.wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
-        .result-box { margin-top: 20px; padding: 20px; border: 2px solid #ddd; border-radius: 8px; background: #fff; }
-        .search-link { display: inline-block; margin: 10px 10px 0 0; padding: 8px 12px; background: #4285f4; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; }
-        .stats-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .stats-table th, .stats-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        #total-status { margin-bottom: 20px; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; }
+        .result-box { 
+            margin-top: 20px; padding: 18px; border-radius: 10px; background: #f8fafc; border-left: 5px solid #cbd5e0;
+        }
+        .search-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .search-link { 
+            flex: 1; min-width: 140px; text-align: center; padding: 10px; background: #4285f4; 
+            color: white; text-decoration: none; border-radius: 6px; font-size: 13px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .stats-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        .stats-table th, .stats-table td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
+        #total-status { 
+            margin-bottom: 20px; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.1rem;
+        }
+        @media (max-width: 480px) {
+            .container { padding: 15px; border-radius: 0; min-height: 100vh; margin-top: 0; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="home-screen">
-        <h1>ビジネス法務3級 学習ナビ</h1>
-        <div class="menu-stack">
-            <button onclick="startQuiz('all')">最初から解く (問題・選択肢ランダム)</button>
-            <button id="resume-btn" onclick="resumeQuiz()" style="display:none; background:#27ae60;">前回の続きから解く</button>
-            <button onclick="showCategoryMenu()">カテゴリを選択して解く</button>
-            <button onclick="showStats()">成績表・合格判定</button>
+        <h1>ビジネス法務3級<br>学習ナビ</h1>
+        <div id="loading-status" style="text-align:center; padding:20px;">データを読み込んでいます...</div>
+        <div class="menu-stack hidden" id="main-menu">
+            <button onclick="startQuiz('order')">最初から解く (ID順)</button>
+            <button onclick="startQuiz('random')" class="btn-random">問題をランダムに解く</button>
+            <button id="resume-btn" onclick="resumeQuiz()" style="display:none; background:#2ecc71;">前回の続きから解く</button>
+            <button onclick="showCategoryMenu()" style="background:#9b59b6;">カテゴリを選択して解く</button>
+            <button onclick="showStats()" style="background:#f1c40f; color:#333;">成績表・合格判定</button>
         </div>
     </div>
 
     <div id="category-screen" class="hidden">
         <h2>カテゴリ選択</h2>
         <div id="category-list" class="menu-stack"></div>
-        <button onclick="showHome()" style="background:#95a5a6; margin-top:20px; width:100%;">戻る</button>
+        <button onclick="showHome()" style="background:#95a5a6; margin-top:20px;">戻る</button>
     </div>
 
     <div id="quiz-screen" class="hidden">
-        <div style="display:flex; justify-content: space-between; font-weight:bold; color: #666;">
+        <div style="display:flex; justify-content: space-between; font-size:12px; color:#7f8c8d; margin-bottom:10px;">
             <span id="progress-text"></span>
             <span id="category-label"></span>
         </div>
-        <p id="question-text" style="font-size:1.1rem; font-weight:bold; margin: 20px 0;"></p>
+        <div id="question-text" style="font-size:17px; font-weight:bold; margin-bottom:20px; line-height:1.5;"></div>
         <div id="options-container"></div>
         
         <div id="feedback-container" class="hidden">
             <div id="result-msg" class="result-box"></div>
-            <div id="search-buttons"></div>
-            <button onclick="nextQuestion()" style="width:100%; margin-top:20px; background:var(--primary);">次の問題へ</button>
+            <div class="search-actions" id="search-buttons"></div>
+            <button onclick="nextQuestion()" style="width:100%; margin-top:25px; background:var(--primary);">次の問題へ</button>
         </div>
     </div>
 
     <div id="stats-screen" class="hidden">
         <h2>成績表・合格判定</h2>
         <div id="total-status"></div>
-        <table class="stats-table" id="stats-table">
-            <thead>
-                <tr><th>カテゴリ</th><th>正解数 / 解答数</th><th>正答率</th></tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <button onclick="showHome()" style="background:#95a5a6; margin-top:20px; width:100%;">戻る</button>
+        <div style="overflow-x: auto;">
+            <table class="stats-table" id="stats-table">
+                <thead><tr><th>カテゴリ</th><th>正解/解答</th><th>率</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <button onclick="showHome()" style="background:#95a5a6; margin-top:25px; width:100%;">戻る</button>
     </div>
 </div>
 
@@ -76,26 +109,40 @@ let currentQuiz = [];
 let currentIndex = 0;
 let scoreData = JSON.parse(localStorage.getItem('bizLawStats')) || {};
 
-// JSONデータの読み込み
-fetch('biz3class.json')
-    .then(response => response.json())
-    .then(data => {
-        allQuestions = data;
+async function initApp() {
+    try {
+        const response = await fetch('./biz3class.json');
+        if (!response.ok) throw new Error('JSON読み込み失敗');
+        const data = await response.json();
+        
+        // デフォルトはID順にソート
+        allQuestions = data.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+        
+        document.getElementById('loading-status').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
         if(localStorage.getItem('bizLawProgress')) {
             document.getElementById('resume-btn').style.display = 'block';
         }
-    });
+    } catch (err) {
+        document.getElementById('loading-status').innerHTML = "⚠️ JSON読み込みエラー";
+    }
+}
 
 function showHome() {
     document.querySelectorAll('.container > div').forEach(el => el.classList.add('hidden'));
     document.getElementById('home-screen').classList.remove('hidden');
 }
 
-function startQuiz(type, catName = null) {
+function startQuiz(mode, catName = null) {
     currentIndex = 0;
-    if (type === 'all') {
+    if (mode === 'random') {
+        // 問題の順番をシャッフル
         currentQuiz = [...allQuestions].sort(() => Math.random() - 0.5);
+    } else if (mode === 'order') {
+        // ID順
+        currentQuiz = [...allQuestions];
     } else {
+        // カテゴリ別
         currentQuiz = allQuestions.filter(q => q.category === catName);
     }
     
@@ -107,35 +154,37 @@ function startQuiz(type, catName = null) {
 
 function renderQuestion() {
     const q = currentQuiz[currentIndex];
-    document.getElementById('progress-text').innerText = `Q.${currentIndex + 1} / ${currentQuiz.length}`;
+    // IDを表示しつつ現在の進行状況を表示
+    document.getElementById('progress-text').innerText = `問題 ID:${q.id} (${currentIndex + 1} / ${currentQuiz.length})`;
     document.getElementById('category-label').innerText = q.category;
     document.getElementById('question-text').innerText = q.question;
     document.getElementById('feedback-container').classList.add('hidden');
     
-    // 選択肢のランダム化
-    const options = [
-        { text: q.option1, id: 1 },
-        { text: q.option2, id: 2 },
-        { text: q.option3, id: 3 },
-        { text: q.option4, id: 4 }
+    // 選択肢（1〜4）をシャッフル
+    const opts = [
+        { text: q.option1, num: 1 },
+        { text: q.option2, num: 2 },
+        { text: q.option3, num: 3 },
+        { text: q.option4, num: 4 }
     ].sort(() => Math.random() - 0.5);
 
     const container = document.getElementById('options-container');
     container.innerHTML = '';
-    options.forEach(opt => {
+    
+    opts.forEach(opt => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
         btn.innerText = opt.text;
-        btn.onclick = () => checkAnswer(opt.id, q, opt.text);
+        btn.onclick = () => checkAnswer(opt.num, q, opt.text);
         container.appendChild(btn);
     });
+    window.scrollTo(0,0);
 }
 
-function checkAnswer(selectedId, q, selectedText) {
-    const isCorrect = (selectedId === q.answer);
+function checkAnswer(selectedNum, q, selectedText) {
+    const isCorrect = (selectedNum === q.answer);
     const correctText = q[`option${q.answer}`];
     
-    // ボタンの色変更
     const btns = document.querySelectorAll('.option-btn');
     btns.forEach(btn => {
         btn.disabled = true;
@@ -143,25 +192,25 @@ function checkAnswer(selectedId, q, selectedText) {
         if (btn.innerText === selectedText && !isCorrect) btn.classList.add('wrong');
     });
 
-    // スコア記録
-    if (!scoreData[q.category]) scoreData[q.category] = { correct: 0, total: 0 };
+    if(!scoreData[q.category]) scoreData[q.category] = { correct: 0, total: 0 };
     scoreData[q.category].total++;
-    if (isCorrect) scoreData[q.category].correct++;
+    if(isCorrect) scoreData[q.category].correct++;
     localStorage.setItem('bizLawStats', JSON.stringify(scoreData));
 
-    // フィードバック表示
     const fb = document.getElementById('feedback-container');
-    const msg = document.getElementById('result-msg');
     fb.classList.remove('hidden');
-    msg.innerHTML = `<h3 style="margin-top:0; color:${isCorrect ? 'var(--success)' : 'var(--danger)'}">${isCorrect ? '正解！' : '不正解...'}</h3><p>${q.explanation}</p>`;
+    document.getElementById('result-msg').innerHTML = `
+        <strong style="color:${isCorrect ? 'var(--success)' : 'var(--danger)'}; font-size:1.2rem;">
+            ${isCorrect ? '⭕ 正解' : '❌ 不正解'}
+        </strong>
+        <p style="margin-top:10px; font-size:14px; color:#555;">${q.explanation}</p>
+    `;
 
-    // Google検索ボタン
     const searchArea = document.getElementById('search-buttons');
-    const googleBase = "https://www.google.com/search?q=";
-    searchArea.innerHTML = `<a href="${googleBase}${encodeURIComponent('ビジネス実務法務3級 ' + correctText)}" target="_blank" class="search-link">🔎 正答を詳しく調べる</a>`;
+    searchArea.innerHTML = `<a href="https://www.google.com/search?q=${encodeURIComponent('ビジネス実務法務3級 ' + correctText)}" target="_blank" class="search-link">🔎 正答を詳しく解説</a>`;
     
-    if (!isCorrect) {
-        searchArea.innerHTML += `<a href="${googleBase}${encodeURIComponent('ビジネス実務法務3級 ' + selectedText)}" target="_blank" class="search-link" style="background:#ea4335">🔎 誤答の原因を調べる</a>`;
+    if(!isCorrect) {
+        searchArea.innerHTML += `<a href="https://www.google.com/search?q=${encodeURIComponent('ビジネス実務法務3級 ' + selectedText)}" target="_blank" class="search-link" style="background:#ea4335">🔎 自分の選択を解説</a>`;
     }
 
     // 進捗保存
@@ -170,18 +219,18 @@ function checkAnswer(selectedId, q, selectedText) {
 
 function nextQuestion() {
     currentIndex++;
-    if (currentIndex < currentQuiz.length) {
+    if(currentIndex < currentQuiz.length) {
         renderQuestion();
     } else {
-        alert("すべての問題が終了しました！");
         localStorage.removeItem('bizLawProgress');
+        alert("全問題を終了しました！成績表を確認しましょう。");
         showStats();
     }
 }
 
 function resumeQuiz() {
     const saved = JSON.parse(localStorage.getItem('bizLawProgress'));
-    if (saved) {
+    if(saved) {
         currentQuiz = saved.currentQuiz;
         currentIndex = saved.currentIndex;
         document.getElementById('home-screen').classList.add('hidden');
@@ -211,18 +260,14 @@ function showStats() {
     const statusDiv = document.getElementById('total-status');
     tbody.innerHTML = '';
     
-    let totalCorrect = 0;
-    let totalAnswered = 0;
-
-    for (let cat in scoreData) {
+    let totalCorrect = 0, totalAnswered = 0;
+    for(let cat in scoreData) {
         const row = tbody.insertRow();
         const {correct, total} = scoreData[cat];
         const rate = ((correct / total) * 100).toFixed(1);
-        totalCorrect += correct;
-        totalAnswered += total;
-
+        totalCorrect += correct; totalAnswered += total;
         row.insertCell(0).innerText = cat;
-        row.insertCell(1).innerText = `${correct} / ${total}`;
+        row.insertCell(1).innerText = `${correct}/${total}`;
         row.insertCell(2).innerText = `${rate}%`;
     }
 
@@ -231,11 +276,13 @@ function showStats() {
         const isPass = totalRate >= 70;
         statusDiv.style.background = isPass ? "#d4edda" : "#f8d7da";
         statusDiv.style.color = isPass ? "#155724" : "#721c24";
-        statusDiv.innerHTML = `総合正答率: ${totalRate}%<br>${isPass ? '【合格圏内】この調子で頑張りましょう！' : '【不合格】合格ライン(70%)まであと ' + (70 - totalRate).toFixed(1) + '% です。'}`;
+        statusDiv.innerHTML = `総合正答率: ${totalRate}%<br>${isPass ? '🎉 合格圏内です！' : '💪 あと少し！(70%で合格)'}`;
     } else {
-        statusDiv.innerHTML = "まだ解答データがありません。";
+        statusDiv.innerHTML = "解答データがありません。";
     }
 }
+
+initApp();
 </script>
 </body>
 </html>
