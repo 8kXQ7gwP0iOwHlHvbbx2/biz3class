@@ -2,82 +2,130 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ビジネス法務3級 対策アプリ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --primary: #2c3e50; --secondary: #3498db; --success: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; --text: #333;
-        }
-        body { 
-            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; 
-            background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center;
-        }
-        .container { 
-            width: 100%; max-width: 700px; background: #fff; padding: 20px; border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px; position: relative;
-            min-height: 500px;
+            --primary: #2563eb;
+            --secondary: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f1f5f9;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --card-bg: #ffffff;
+            --radius: 16px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
-        /* ダッシュボード */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: var(--bg); color: var(--text-main); 
+            margin: 0; padding: 0; line-height: 1.6;
+            display: flex; justify-content: center; min-height: 100vh;
+        }
+
+        /* メインコンテナ */
+        .container { 
+            width: 100%; max-width: 600px;
+            margin: 20px auto; padding: 24px;
+            background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow); position: relative;
+        }
+
+        h1 { font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 24px; color: var(--primary); }
+
+        /* ダッシュボード（進捗表示） */
         .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 25px;
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 16px; margin-bottom: 30px;
+            background: #f8fafc; padding: 20px;
+            border-radius: var(--radius); border: 1px solid #e2e8f0;
         }
         .stat-item { text-align: center; }
-        .stat-value { display: block; font-size: 1.5rem; font-weight: bold; color: var(--secondary); }
-        .stat-label { font-size: 11px; color: #7f8c8d; }
+        .stat-value { display: block; font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+        .stat-label { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; text-transform: uppercase; }
 
+        /* 共通ヘッダー（問題番号・カテゴリ） */
         .quiz-header {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #f1f5f9;
+            gap: 10px;
         }
-        .info-area { flex: 1; padding-right: 10px; }
-        .id-progress { font-size: 12px; color: #7f8c8d; display: block; margin-bottom: 4px; }
-        .category-name { font-size: 16px; font-weight: bold; color: var(--primary); line-height: 1.3; }
+        .info-area { flex: 1; min-width: 0; }
+        .id-progress { font-size: 0.75rem; color: var(--text-sub); font-weight: bold; }
+        .category-name { 
+            font-size: 1.1rem; font-weight: 700; color: var(--text-main); 
+            display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
 
         .btn-home-icon { 
-            background: #95a5a6; width: 40px; height: 40px; min-width: 40px;
+            background: #e2e8f0; width: 44px; height: 44px; min-width: 44px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px; border-radius: 50%; border: none; cursor: pointer; color: white;
+            font-size: 20px; border-radius: 12px; border: none; cursor: pointer; color: var(--text-main);
+            transition: background 0.2s;
         }
+        .btn-home-icon:hover { background: #cbd5e1; }
 
-        .menu-stack { display: flex; flex-direction: column; gap: 12px; }
-        button { 
-            padding: 16px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; 
-            border-radius: 10px; transition: all 0.2s; background: var(--secondary); color: white;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .btn-resume { background: #2ecc71 !important; }
-        .btn-review { background: #e74c3c !important; }
-        .btn-category { background: #9b59b6 !important; }
-        .btn-random { background: #e67e22 !important; }
-        .btn-stats { background: #f1c40f !important; color: #333 !important; }
-        .hidden { display: none; }
-
-        #question-text { font-size: 17px; font-weight: bold; margin-bottom: 20px; line-height: 1.6; }
-        .option-btn { 
-            display: block; width: 100%; text-align: left; margin: 10px 0; padding: 15px; 
-            background: #fff; color: var(--text); border: 2px solid #edf2f7; border-radius: 10px; 
-            font-size: 15px; line-height: 1.4;
-        }
-        .option-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
-        .option-btn.wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
+        /* ボタンスタック */
+        .menu-stack { display: flex; flex-direction: column; gap: 14px; }
         
-        .result-box { margin-top: 20px; padding: 18px; border-radius: 10px; background: #f8fafc; border-left: 5px solid #cbd5e0; }
-        .search-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        button { 
+            padding: 16px 20px; font-size: 1rem; font-weight: 700; cursor: pointer; border: none; 
+            border-radius: 12px; transition: all 0.2s; background: var(--primary); color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        button:active { transform: translateY(1px); opacity: 0.9; }
+
+        .btn-resume { background: var(--success) !important; }
+        .btn-review { background: var(--danger) !important; }
+        .btn-category { background: var(--secondary) !important; }
+        .btn-random { background: var(--warning) !important; }
+        .btn-stats { background: #f8fafc !important; color: var(--text-main) !important; border: 2px solid #e2e8f0 !important; }
+
+        /* 問題・選択肢 */
+        #question-text { 
+            font-size: 1.15rem; font-weight: 700; margin-bottom: 24px; color: var(--text-main);
+            word-break: break-all;
+        }
+        .option-btn { 
+            display: block; width: 100%; text-align: left; margin: 12px 0; padding: 16px; 
+            background: #fff; color: var(--text-main); border: 2px solid #e2e8f0; border-radius: 12px; 
+            font-size: 0.95rem; font-weight: 500; line-height: 1.5;
+        }
+        .option-btn:hover:not(:disabled) { border-color: var(--primary); background: #f0f7ff; }
+        .option-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
+        .option-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
+        
+        /* 結果表示 */
+        .result-box { margin-top: 24px; padding: 20px; border-radius: 12px; background: #f8fafc; border-left: 6px solid #cbd5e1; }
+        .search-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         .search-link { 
-            flex: 1; min-width: 140px; text-align: center; padding: 10px; background: #4285f4; 
-            color: white; text-decoration: none; border-radius: 6px; font-size: 13px; display: flex; align-items: center; justify-content: center;
+            padding: 12px; background: #4285f4; color: white; text-decoration: none; 
+            border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-align: center;
+            display: flex; align-items: center; justify-content: center;
         }
 
+        /* 成績表テーブル */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+        th { text-align: left; padding: 12px; font-size: 0.8rem; color: var(--text-sub); text-transform: uppercase; }
+        td { background: #f8fafc; padding: 14px 12px; border-top: 1px solid #edf2f7; border-bottom: 1px solid #edf2f7; }
+        td:first-child { border-left: 1px solid #edf2f7; border-radius: 10px 0 0 10px; font-weight: 700; }
+        td:last-child { border-right: 1px solid #edf2f7; border-radius: 0 10px 10px 0; text-align: right; }
+
+        .hidden { display: none !important; }
+
+        /* スマホ用調整 */
         @media (max-width: 480px) {
-            .container { padding: 15px; border-radius: 0; min-height: 100vh; margin-top: 0; }
+            body { background: var(--card-bg); }
+            .container { margin: 0; padding: 20px; border-radius: 0; box-shadow: none; max-width: 100%; }
+            .stat-value { font-size: 1.5rem; }
+            .search-actions { grid-template-columns: 1fr; }
+            button { padding: 18px; }
         }
     </style>
 </head>
@@ -98,7 +146,7 @@
             </div>
         </div>
 
-        <div id="loading-status" style="text-align:center; padding:20px;">データを読み込んでいます...</div>
+        <div id="loading-status" style="text-align:center; padding:40px; color:var(--text-sub);">データを読み込んでいます...</div>
         
         <div class="menu-stack hidden" id="main-menu">
             <button onclick="startQuiz('order')">最初から解く</button>
@@ -140,10 +188,10 @@
             <div class="info-area"><span class="category-name">成績表・合格判定</span></div>
             <button class="btn-home-icon" onclick="showHome()">🏠</button>
         </div>
-        <div id="total-status" style="padding:15px; border-radius:10px; text-align:center; font-weight:bold; margin-bottom:20px;"></div>
-        <div style="overflow-x: auto;">
-            <table style="width:100%; border-collapse: collapse; font-size:14px;" id="stats-table">
-                <thead style="border-bottom:2px solid #eee;"><tr><th>カテゴリ</th><th>正解/解答</th><th>率</th></tr></thead>
+        <div id="total-status" style="padding:20px; border-radius:12px; text-align:center; font-weight:bold; margin-bottom:24px; font-size:1.1rem;"></div>
+        <div style="overflow-x: hidden;">
+            <table id="stats-table">
+                <thead><tr><th>カテゴリ</th><th>正解/解答</th><th>率</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -151,6 +199,7 @@
 </div>
 
 <script>
+/* 既存のJavaScriptロジック（そのまま維持） */
 let allQuestions = [];
 let currentQuiz = [];
 let currentIndex = 0;
@@ -333,7 +382,9 @@ function showStats() {
     if (totalAnswered > 0) {
         const rate = ((totalCorrect / totalAnswered) * 100).toFixed(1);
         const isPass = rate >= 70;
-        statusDiv.style.background = isPass ? "#d4edda" : "#f8d7da";
+        statusDiv.style.background = isPass ? "#ecfdf5" : "#fef2f2";
+        statusDiv.style.color = isPass ? "#065f46" : "#991b1b";
+        statusDiv.style.border = `1px solid ${isPass ? "#10b981" : "#ef4444"}`;
         statusDiv.innerHTML = `総合正答率: ${rate}%<br>${isPass ? '🎉 合格圏内！' : '💪 あと少し！'}`;
     } else statusDiv.innerHTML = "データがありません。";
 }
